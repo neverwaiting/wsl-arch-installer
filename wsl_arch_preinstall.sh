@@ -37,7 +37,7 @@ git_install() {
   [ -d "$TEMP_PACKAGES_DIR" ] || sudo -u "$name" mkdir -p "$TEMP_PACKAGES_DIR"
   pushd "$TEMP_PACKAGES_DIR"
   for repo in $@; do
-    git clone "$repo"
+    git clone "$MIRROR_GITHUB_URL_PREFIX/$repo"
     repo_name=$(echo "$repo" | sed -E 's/.+\/(.+)\.git/\1/')
     pushd "$repo_name" && make clean install > /dev/null 2>&1 && popd
   done
@@ -67,7 +67,9 @@ pacman_install cronie && systemctl enable cronie
 curl -fsL $MIRROR_GITHUB_URL_PREFIX/https://raw.github.com/neverwaiting/archinstall/master/packages.csv > /tmp/packages.csv
 while IFS=',' read -a packs; do
   if [ -z "${packs[0]}" ]; then
-    pacpackages="$pacpackages ${packs[1]}"
+    if pacman -Ss "${packs[1]}" >> /dev/null; then
+      pacpackages="$pacpackages ${packs[1]}"
+    fi
   elif [ "${packs[0]}" == "Y" ]; then
     yaypackages="$yaypackages ${packs[1]}"
   elif [ "${packs[0]}" == "A" ]; then
