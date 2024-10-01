@@ -10,7 +10,7 @@ password="root"
 USER_HOME="/home/$name"
 USER_LOCAL_HOME="$USER_HOME/.local"
 USER_CONFIG_HOME="$USER_HOME/.config"
-MIRROR_GITHUB_URL_PREFIX="https://ghproxy.com"
+MIRROR_GITHUB_URL_PREFIX="https://ghproxy.cn"
 MIRROR_GITHUB_URL="$MIRROR_GITHUB_URL_PREFIX/https://github.com"
 TEMP_PACKAGES_DIR="/tmp/packages"
 
@@ -22,7 +22,7 @@ aur_install() {
   [ -d "$TEMP_PACKAGES_DIR" ] || sudo -u "$name" mkdir -p "$TEMP_PACKAGES_DIR"
   for item in $@; do
     sudo -u "$name" git -C "$TEMP_PACKAGES_DIR" clone "https://aur.archlinux.org/${item}.git" && \
-    sudo -u "$name" sed -iE 's#https://github\.com#https://ghproxy\.com/&#g' "$TEMP_PACKAGES_DIR/$item/PKGBUILD" && \
+    sudo -u "$name" sed -iE 's#https://github\.com#https://ghproxy\.cn/&#g' "$TEMP_PACKAGES_DIR/$item/PKGBUILD" && \
     pushd "$TEMP_PACKAGES_DIR/$item" && \
     sudo -u "$name" GOPROXY="https://goproxy.cn" makepkg --noconfirm -si && \
     popd || echo -e "########## AUR: Install $item failed! ##########\n"
@@ -66,16 +66,18 @@ pacman_install cronie && systemctl enable cronie
 # install packages in packages.csv file
 curl -fsL $MIRROR_GITHUB_URL_PREFIX/https://raw.github.com/neverwaiting/archinstall/master/packages.csv > /tmp/packages.csv
 while IFS=',' read -a packs; do
-  if [ -z "${packs[0]}" ]; then
-    if pacman -Ss "${packs[1]}" >> /dev/null; then
-      pacpackages="$pacpackages ${packs[1]}"
+  if [ "${packs[2]}" == "Y" ]; then
+    if [ -z "${packs[0]}" ]; then
+      if pacman -Ss "${packs[1]}" >> /dev/null; then
+        pacpackages="$pacpackages ${packs[1]}"
+      fi
+    elif [ "${packs[0]}" == "Y" ]; then
+      yaypackages="$yaypackages ${packs[1]}"
+    elif [ "${packs[0]}" == "A" ]; then
+      aurpackages="$aurpackages ${packs[1]}"
+    elif [ "${packs[0]}" == "G" ]; then
+      gitpackages="$gitpackages ${packs[1]}"
     fi
-  elif [ "${packs[0]}" == "Y" ]; then
-    yaypackages="$yaypackages ${packs[1]}"
-  elif [ "${packs[0]}" == "A" ]; then
-    aurpackages="$aurpackages ${packs[1]}"
-  elif [ "${packs[0]}" == "G" ]; then
-    gitpackages="$gitpackages ${packs[1]}"
   fi
 done < /tmp/packages.csv
 
@@ -92,5 +94,3 @@ sudo -u "$name" cp -r "$USER_HOME/dotfiles/.local" "$USER_HOME/" && \
 sudo -u "$name" cp "$USER_HOME/dotfiles/.zprofile" "$USER_HOME/" && \
 sudo -u "$name" cp "$USER_CONFIG_HOME/npm/npmrc" "$USER_HOME/.npmrc" || echo -e "########## set dotfiles error! ##########\n"
 
-# configuration for picom
-sed -i "s/^fade-in-step = \S*/fade-in-step = 0.08;/; s/^fade-out-step = \S*/fade-out-step = 0.08;/; s/^backend = \S*/backend = \"glx\";/" /etc/xdg/picom.conf
