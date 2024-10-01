@@ -94,3 +94,5 @@ sudo -u "$name" cp -r "$USER_HOME/dotfiles/.local" "$USER_HOME/" && \
 sudo -u "$name" cp "$USER_HOME/dotfiles/.zprofile" "$USER_HOME/" && \
 sudo -u "$name" cp "$USER_CONFIG_HOME/npm/npmrc" "$USER_HOME/.npmrc" || echo -e "########## set dotfiles error! ##########\n"
 
+sudo -u "$name" nvm install 18
+
